@@ -9,21 +9,20 @@ library(tidyverse)
 library(rayshader)
 library(ncdf4)
 
-library(viridis)
-library(raster)
+# library(raster)
 ```
 
 open the file and extract data of longitude and latitude for raster
 ```{r}
 nc_dat <- nc_open('20200323_NZDI.nc')
-# Save the print(nc) dump to a text file
-{
-    sink('droughtindex_metadata.txt')
- print(nc_dat)
-    sink()
-}
-lon <- ncvar_get(nc_dat, "lon")
-lat <- ncvar_get(nc_dat, "lat")
+# # Save the print(nc) dump to a text file
+# {
+#     sink('droughtindex_metadata.txt')
+#  print(nc_dat)
+#     sink()
+# }
+# lon <- ncvar_get(nc_dat, "lon")
+# lat <- ncvar_get(nc_dat, "lat")
 
 
 ```
@@ -38,14 +37,14 @@ nc_close(nc_dat)
 ```
 
 
-use raster and plot the rastered data
-https://rpubs.com/boyerag/297592
+<!-- use raster and plot the rastered data -->
+<!-- https://rpubs.com/boyerag/297592 -->
 
-assuming the coordinate reference system is the standard well-known text format, WGS84 system
-```{r}
-r <- raster(t(ndvi.array), xmn=min(lon), xmx=max(lon), ymn=min(lat), ymx=max(lat), crs=CRS("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs+ towgs84=0,0,0"))
-plot(r)
-```
+<!-- assuming the coordinate reference system is the standard well-known text format, WGS84 system -->
+<!-- ```{r} -->
+<!-- r <- raster(t(ndvi.array), xmn=min(lon), xmx=max(lon), ymn=min(lat), ymx=max(lat), crs=CRS("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs+ towgs84=0,0,0")) -->
+<!-- plot(r) -->
+<!-- ``` -->
 
 
 
@@ -64,12 +63,23 @@ nc_df <- ndvi.array %>% reshape2::melt()
 
 create a ggplot raster image
 ```{r}
+# set colour scale
+no_breaks <- 2/0.25
+
+colour_scale <- rep("#F3F3F3", no_breaks)
+colour_scale[length(colour_scale)] <- "#D45972"
+colour_scale[length(colour_scale) - 1] <- "#F57F6E"
+colour_scale[length(colour_scale) - 2] <- "#FDB480"
+colour_scale[length(colour_scale) - 3] <- "#FEDD95"
+colour_scale[length(colour_scale) - 4] <- "#FFFD7D"
+
+
+
 gg_di = ggplot(nc_df, aes(Var2, Var1)) +
   geom_raster(aes(fill=value)) +
-  scale_fill_gradient(low = "grey90", high = "red")
-  
-  # stat_density_2d(aes(fill = stat(value)), geom = "polygon", n = 100, bins = 10,contour = TRUE) +
-  # scale_fill_viridis_c(option = "A")
+  scale_fill_gradientn(colours = colour_scale)
+#   theme_void()
+
 ```
 
 
@@ -78,4 +88,20 @@ use rayshader to generate a 3d plot
 plot_gg(gg_di,multicore=TRUE,width=5,height=5,scale=250,windowsize=c(1400,866),
         zoom = 0.55, phi = 30)
 ```
+
+need a rgl window open to take snapshots or videos
+
+```{r}
+render_snapshot()
+render_snapshot(clear = TRUE)
+```
+
+
+
+
+```{r}
+render_movie("nzdi.mp4", title_text = "Drought Index")
+```
+
+
 
