@@ -1,0 +1,98 @@
+---
+title: "droughtindex_timelapse"
+output: html_document
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(rayshader)
+library(ncdf4)
+library(av)
+source("functions.R")
+
+no_breaks <- 2/0.25
+
+colour_scale <- rep("#F3F3F3", no_breaks)
+colour_scale[length(colour_scale)] <- "#D45972"
+colour_scale[length(colour_scale) - 1] <- "#F57F6E"
+colour_scale[length(colour_scale) - 2] <- "#FDB480"
+colour_scale[length(colour_scale) - 3] <- "#FEDD95"
+colour_scale[length(colour_scale) - 4] <- "#FFFD7D"
+
+```
+
+open the file and extract data of longitude and latitude for raster
+extract the data as an array
+```{r}
+nc_dat <- nc_open('20200323_NZDI.nc')
+
+ndvi.array <- ncvar_get(nc_dat) 
+
+nc_close(nc_dat) 
+```
+
+
+convert the matrix array into a dataframe
+
+```{r}
+nc_df <- ndvi.array %>% reshape2::melt() %>% 
+  rename(x = Var2,
+         y = Var1) %>% 
+  mutate(value = ifelse(!is.nan(value), value, NA))
+
+# max(nc_df$value, na.rm = TRUE)
+```
+
+create more df
+```{r}
+nc_df2 <- nc_df %>% 
+  mutate(value = case_when(!is.na(value) ~ value * runif(1, 1, 6),
+                           TRUE ~ value),
+         value = case_when(!is.na(value) ~ 2 * value / max(value, na.rm = TRUE),
+                           TRUE ~ value))
+
+
+nc_df3 <- nc_df %>% 
+  mutate(value = case_when(!is.na(value) ~ value * runif(1, 1, 6),
+                           TRUE ~ value),
+         value = case_when(!is.na(value) ~ 2 * value / max(value, na.rm = TRUE),
+                           TRUE ~ value))
+
+
+```
+
+
+```{r}
+di_df <- tibble::tribble(~time_step,    ~df,
+                         1,             nc_df,
+                         2,             nc_df2,
+                         3,             nc_df3)
+```
+
+```{r}
+num_files <- nrow(di_df)
+```
+
+
+```{r}
+di_df <- di_df %>% 
+  mutate(plots = map(df, create_plots))
+```
+
+
+```{r}
+di_df %>% 
+  mutate(snapshottaken = map2(plots, time_step, create_snapshots))
+```
+
+
+```{r}
+png_files <- sprintf("timeseries/nzdi%03d.png", 1:num_files)
+av::av_encode_video(png_files, 'timeseries/nzdi_output.mp4', framerate = 1)
+```
+
+
+
+
