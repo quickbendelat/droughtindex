@@ -43,24 +43,33 @@ nc_df <- ndvi.array %>% reshape2::melt() %>%
   mutate(value = ifelse(!is.nan(value), value, NA))
 
 # max(nc_df$value, na.rm = TRUE)
+rm(ndvi.array)
 ```
 
-create more df
+create more df - takes too long to create proper ones
 ```{r}
-nc_df2 <- nc_df %>% 
-  mutate(value = case_when(!is.na(value) ~ value * runif(1, 1, 6),
-                           TRUE ~ value),
-         value = case_when(!is.na(value) ~ 2 * value / max(value, na.rm = TRUE),
-                           TRUE ~ value))
+# nc_df2 <- nc_df %>% 
+#   rowwise() %>% 
+#   mutate(value = case_when(!is.na(value) ~ value * runif(1, 1, 6),
+#                            TRUE ~ value))
+# 
+# max_val <- max(nc_df2$value, na.rm = TRUE)
+# 
+# nc_df2 <- nc_df2 %>% 
+#   mutate(value = case_when(!is.na(value) ~ value/max_val,
+#                            TRUE ~ value))
 
 
-nc_df3 <- nc_df %>% 
-  mutate(value = case_when(!is.na(value) ~ value * runif(1, 1, 6),
-                           TRUE ~ value),
-         value = case_when(!is.na(value) ~ 2 * value / max(value, na.rm = TRUE),
-                           TRUE ~ value))
 
+# nc_df3 <- nc_df %>% 
+#   mutate(value = case_when(!is.na(value) ~ value * runif(1, 1, 6),
+#                            TRUE ~ value),
+#          value = case_when(!is.na(value) ~ 2 * value / max(value, na.rm = TRUE),
+#                            TRUE ~ value))
 
+nc_df2 <- nc_df
+
+nc_df3 <- nc_df
 ```
 
 
@@ -69,6 +78,8 @@ di_df <- tibble::tribble(~time_step,    ~df,
                          1,             nc_df,
                          2,             nc_df2,
                          3,             nc_df3)
+
+rm(nc_df, nc_df2, nc_df3)
 ```
 
 ```{r}
@@ -78,6 +89,7 @@ num_files <- nrow(di_df)
 
 ```{r}
 di_df <- di_df %>% 
+  select(-df) %>% 
   mutate(plots = map(df, create_plots))
 ```
 
@@ -94,5 +106,10 @@ av::av_encode_video(png_files, 'timeseries/nzdi_output.mp4', framerate = 1)
 ```
 
 
+```{r}
+tmp_plot <- create_plots(nc_df2)
+
+create_snapshots(tmp_plot, 2)
+```
 
 

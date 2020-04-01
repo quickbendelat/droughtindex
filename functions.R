@@ -11,9 +11,18 @@ create_snapshots <- function(nz_plot, file_num) {
   plot_gg(nz_plot,multicore=TRUE,width=5,height=5,scale=250,windowsize=c(1400,866),
           zoom = 0.55, phi = 30)
   
-  render_snapshot(filename = "timeseries/nzdi%03d.png")
+  Sys.sleep(60)
+  
+  render_snapshot(filename = sprintf("timeseries/nzdi%03d.png", file_num))
   
   snapshottaken = TRUE
+  
+  if(rgl::rgl.cur() != 0) {
+    rgl::rgl.close()
+  }
+  gc()
+  
+  return(snapshottaken)
 }
 
 
