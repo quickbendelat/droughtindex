@@ -8,7 +8,7 @@ create_plots <- function(df) {
 
 
 create_snapshots <- function(nz_plot, file_num) {
-  plot_gg(nz_plot,multicore=TRUE,width=5,height=5,scale=250,windowsize=c(1400,866),
+  plot_gg(nz_plot,multicore=TRUE,width=5,height=5,scale=250,windowsize=c(1132,700),
           zoom = 0.55, phi = 30)
   
   Sys.sleep(60)
