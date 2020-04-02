@@ -45,6 +45,7 @@ png_files <- nc_files %>%
   mutate(png_files = paste0("timeseries/", fdate, ".png")) %>% 
   select(png_files) %>% 
   pull()
+png_files <- c(png_files, png_files[length(png_files)])
 av::av_encode_video(png_files, 'timeseries/nzdi_output.mp4', framerate = 1)
 ```
 
