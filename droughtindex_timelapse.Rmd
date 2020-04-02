@@ -89,27 +89,20 @@ num_files <- nrow(di_df)
 
 ```{r}
 di_df <- di_df %>% 
-  select(-df) %>% 
-  mutate(plots = map(df, create_plots))
+  mutate(plots = map(df, create_plots)) %>% 
+  select(-df)
 ```
 
 
 ```{r}
 di_df %>% 
-  mutate(snapshottaken = map2(plots, time_step, create_snapshots))
+  mutate(snapshottaken = map2(plots, time_step, create_snapshots_old))
 ```
 
 
 ```{r}
 png_files <- sprintf("timeseries/nzdi%03d.png", 1:num_files)
 av::av_encode_video(png_files, 'timeseries/nzdi_output.mp4', framerate = 1)
-```
-
-
-```{r}
-tmp_plot <- create_plots(nc_df2)
-
-create_snapshots(tmp_plot, 2)
 ```
 
 
