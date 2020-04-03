@@ -34,23 +34,16 @@ nc_files <- list.files(pattern = ".nc$") %>%
 
 row by row, pass each file listed into the `create_snapshots()` function
 ```{r}
-nc_files <- nc_files %>% 
+nc_files %>% 
   mutate(snapshottaken = FALSE,
-         snapshottaken = purrr::map2(file, plot_title, create_snapshots))# %>% 
-  # unnest(cols = c(snapshottaken))
+         snapshottaken = purrr::map2(file, plot_title, create_snapshots))
 ```
 
-print out the list of dates that did not succesfully generate
-```{r}
-nc_files %>% 
-  filter(snapshottaken == TRUE)
-```
 
 
 create the video file after filtering out the dates that did not successfully generate
 ```{r}
 png_files <- nc_files %>% 
-  filter(snapshottaken == TRUE) %>% 
   mutate(png_files = paste0("timelapse_images/", plot_title, ".png")) %>% 
   select(png_files) %>% 
   pull()
