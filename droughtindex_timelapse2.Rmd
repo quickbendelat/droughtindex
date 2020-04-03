@@ -3,8 +3,6 @@ title: "droughtindex_timelapse2"
 output: html_document
 ---
 
-
-
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
@@ -13,40 +11,52 @@ library(ncdf4)
 library(av)
 library(lubridate)
 library(magick)
+library(here)
 source("functions.R")
 
-no_breaks <- 2/0.25
-
-colour_scale <- rep("#F3F3F3", no_breaks)
-colour_scale[length(colour_scale)] <- "#D45972"
-colour_scale[length(colour_scale) - 1] <- "#F57F6E"
-colour_scale[length(colour_scale) - 2] <- "#FDB480"
-colour_scale[length(colour_scale) - 3] <- "#FEDD95"
-colour_scale[length(colour_scale) - 4] <- "#FFFD7D"
+# create the timelapse_images subdirectory if it does not exist
+# this is where the image files and video files will be written to
+if(!dir.exists(paste0(here::here(), "/timelapse_images"))) {
+  dir.create(paste0(here::here(), "/timelapse_images"))
+}
 
 ```
 
 
+place all the .nc files in the directory where this file is
+assumes they are named by date (as provided e.g. "20200323_NZDI.nc"), as the function will use the date from the file name and use it in the snapshot
 ```{r}
+# lists all the .nc files in this directory and turns this into a tibble
 nc_files <- list.files(pattern = ".nc$") %>% 
   enframe(name = NULL, value = "file") %>% 
-  mutate(fdate = lubridate::ymd(str_extract(file, "[^_]+")))
+  mutate(plot_title = lubridate::ymd(stringr::str_extract(file, "[^_]+")))
 ```
 
+row by row, pass each file listed into the `create_snapshots()` function
+```{r}
+nc_files <- nc_files %>% 
+  mutate(snapshottaken = FALSE,
+         snapshottaken = purrr::map2(file, plot_title, create_snapshots))# %>% 
+  # unnest(cols = c(snapshottaken))
+```
+
+print out the list of dates that did not succesfully generate
 ```{r}
 nc_files %>% 
-  mutate(snapshottaken = map2(file, fdate, create_snapshots))
+  filter(snapshottaken == TRUE)
 ```
 
 
+create the video file after filtering out the dates that did not successfully generate
 ```{r}
-
 png_files <- nc_files %>% 
-  mutate(png_files = paste0("timeseries/", fdate, ".png")) %>% 
+  filter(snapshottaken == TRUE) %>% 
+  mutate(png_files = paste0("timelapse_images/", plot_title, ".png")) %>% 
   select(png_files) %>% 
   pull()
 png_files <- c(png_files, png_files[length(png_files)])
-av::av_encode_video(png_files, 'timeseries/nzdi_output.mp4', framerate = 1)
+
+av::av_encode_video(png_files, 'timelapse_images/nzdi_output.mp4', framerate = 1)
 ```
 
 
